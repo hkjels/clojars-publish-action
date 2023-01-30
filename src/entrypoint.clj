@@ -54,28 +54,29 @@
       (slurp f))))
 
 (defn update-pom-version!
-  [pom version]
+  [root pom version]
   (let [new-pom (-> pom
                     (update-content version ::pom/project ::pom/version)
                     (update-content version ::pom/project ::pom/scm ::pom/tag))]
-    (spit "./pom.xml" new-pom)))
+    (spit (str root "pom.xml") new-pom)))
 
 
 (defn -main
   [& args]
-  (let [deps (-> (file->str "./deps.edn") edn/read-string)
-        pom (file->str "./pom.xml")
+  (let [root (or (str (str/replace (get (nth args 1) "working-directory") #"/$" "") "/") "./")
+        deps (-> (file->str (str root "deps.edn")) edn/read-string)
+        pom (file->str (str root "pom.xml"))
         version (get-version pom)
         project-name (get-content pom ::pom/project ::pom/name)
         jar-name (str project-name "-" version ".jar")
-        jar-path (str "./target/" jar-name)]
+        jar-path (str root "target/" jar-name)]
 
     (when use-git-ref
-      (update-pom-version! pom version))
+      (update-pom-version! root pom version))
 
     ; https://github.com/clojure/brew-install/blob/2ee355398e655e1d1b57e4f5ee658d087ccaea7f/src/main/resources/clojure#L342
     ; (print (:out (sh "clojure" "-Spom")))
-    (gen-manifest/-main "--config-project" "./deps.edn" "--gen" "pom")
+    (gen-manifest/-main "--config-project" (str root "deps.edn") "--gen" "pom")
 
     (build-jar {:jar jar-path :jar-type :thin :verbose true})
 

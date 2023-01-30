@@ -1,5 +1,8 @@
 name: "Publish to clojars"
 description: "Release clojure tools.deps projects to clojars"
+inputs:
+  working-directory:
+    description: 'The directory where your pom.xml file is located'
 runs:
   using: "docker"
   image: "docker://jlle/clojars:0.4"
